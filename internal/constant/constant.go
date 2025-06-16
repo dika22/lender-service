@@ -15,4 +15,8 @@ const(
 	StateInvested  = "Invested"
 	StateDisbursed = "Disbursed"
 
+	QueueHigh   = "lender:queue:high"
+	QueueMedium = "lender:queue:medium"
+	QueueLow    =  "lender:queue:low"
+
 )

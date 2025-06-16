@@ -8,6 +8,7 @@ import (
 	"lender-service/package/config"
 	"lender-service/package/di/repositories"
 	"log"
+	"time"
 
 	"github.com/hibiken/asynq"
 	"github.com/newrelic/go-agent/v3/newrelic"
@@ -32,8 +33,17 @@ func WorkerClient(cf *config.Cache) *asynq.Client{
 
 func (w Worker) StartWorker(*cli.Context) error  {
 	srv := asynq.NewServer(
-		asynq.RedisClientOpt{},
-		asynq.Config{},
+		asynq.RedisClientOpt{Addr: fmt.Sprintf("%s:%s", w.cacheConf.WorkerRedisHost, w.cacheConf.WorkerRedisPort)},
+		asynq.Config{
+			Concurrency:      10,
+			StrictPriority:   true,
+			GroupGracePeriod: time.Second * 15,
+			Queues: map[string]int{
+				constant.QueueHigh:   5,
+				constant.QueueMedium: 4,
+				constant.QueueLow:    1,
+			},
+		},
 	)
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(tasks.TaskInvestLoan, w.NrWorkerMiddleware(w.tasks.InvestLoan, tasks.TaskInvestLoan))
@@ -54,8 +64,9 @@ func (w Worker) NrWorkerMiddleware(f WorkerHandler, taskName string) func(ctx co
  }
  
 
-func StartWorker(conf *config.Config, c *config.Cache, repos repositories.WrappedRepositories, workerClient *asynq.Client) []*cli.Command {
-	w := Worker{conf: conf,cacheConf: c}
+func StartWorker(conf *config.Config, c *config.Cache, repos repositories.WrappedRepositories, workerClient *asynq.Client, nrp *newrelic.Application) []*cli.Command {
+	task := tasks.NewAsynqTask(conf, repos, workerClient)
+	w := Worker{conf: conf,cacheConf: c, tasks: task, nr: nrp}
 	return []*cli.Command{
 		{
 			Name: CmdServerWorker,

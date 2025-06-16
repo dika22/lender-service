@@ -7,11 +7,13 @@ import (
 	"lender-service/package/di/repositories"
 	"lender-service/package/di/usecases"
 	"lender-service/package/validator"
+	"log"
 	"os"
 
 	api "lender-service/cmd/api"
 	"lender-service/cmd/worker"
 
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/urfave/cli/v2"
 )
 
@@ -25,6 +27,15 @@ func main() {
 
   rds := cache.NewRedis("cacheLender", cacheConf)
 
+  nrApp, err := newrelic.NewApplication(
+    newrelic.ConfigAppName("fusio"),
+    newrelic.ConfigLicense(conf.NewRelicLicense),
+)
+if err != nil {
+    log.Print("ERROR INIT NEWRELIC", err)
+}
+
+
   workerClient := worker.WorkerClient(cacheConf)
   dbRepo := repositories.NewDatabaseRepositories(dbConn)
   redisRepo := repositories.NewCacheRepositories(conf, rds, dbRepo)
@@ -33,7 +44,7 @@ func main() {
   validate := validator.NewValidator()
   cmds := []*cli.Command{}
   cmds = append(cmds, api.ServeAPI(usecase, validate, cacheConf)...)
-  cmds = append(cmds, worker.StartWorker(conf, cacheConf, repos, workerClient)...)
+  cmds = append(cmds, worker.StartWorker(conf, cacheConf, repos, workerClient, nrApp)...)
 
   app := &cli.App{
     Name: "lender-service",
