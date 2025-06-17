@@ -5,7 +5,7 @@ type Database struct {
 	DBPort         string `env:"DB_PORT"`
 	DBUsername     string `env:"DB_USERNAME"`
 	DBPassword     string `env:"DB_PASSWORD"`
-	DBDBName       string `env:"DB_DBNAME"`
+	DBName       string `env:"DB_NAME"`
 	IdleConns      string `env:"IDLE_CONNS"`
 	MaxConns       string `env:"MAX_CONNS"`
 }

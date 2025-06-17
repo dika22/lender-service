@@ -73,7 +73,7 @@ func NewDatabase(connType string, c *config.Database) *gorm.DB {
 		    c.DBHost,	
 		    c.DBUsername,
 			c.DBPassword,
-			c.DBDBName,
+			c.DBName,
 			c.DBPort,
 		)
 
